@@ -77,20 +77,19 @@ app.post("/submit-form", upload.array("fichiers[]"), async (req, res) => {
   const mailOptions = {
     from: `"Formulaire création" <${process.env.EMAIL_USER}>`,
     to: process.env.DEST_EMAIL,
-    subject: "🧾Demande de création référence",
+    subject: "📨Demande de création référence",
     html: generateHtml(formData),
     attachments
   };
 
   try {
     await transporter.sendMail(mailOptions);
-
-    req.files.forEach(file => fs.unlink(file.path, () => {}));
-
     res.status(200).send("Formulaire envoyé !");
-  } catch (error) {
+  } catch (err) {
     console.error("Erreur :", err);
-    res.status(500).send("Erreur lors de l'envoi du mail.");
+    res.status(500).send("Erreur lors de l'envoi.");
+  } finally {
+    req.files.forEach(file => fs.unlink(file.path, () => {}));
   }
 });
 
