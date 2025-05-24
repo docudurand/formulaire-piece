@@ -7,7 +7,16 @@ const fs = require("fs");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Autoriser les requêtes CORS (depuis Wix ou tout domaine)
+const FORM_FIELDS = {
+  email: "Adresse e-mail",
+  marque: "Marque",
+  fournisseur: "Fournisseur de Réappro",
+  reference: "Référence",
+  designation: "Désignation pièce (Si en Anglais)",
+  tarif: "Tarif",
+  remise: "Remise"
+};
+
 app.use(cors({
   origin: 'https://348b238c-180f-4111-994a-5cd53d6e50db.filesusr.com',
   methods: ['POST', 'GET'],
@@ -17,7 +26,6 @@ app.use(cors({
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Multer : stocker temporairement tous types de fichiers sauf .exe, .sh, etc.
 const upload = multer({
   dest: "uploads/",
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -30,7 +38,6 @@ const upload = multer({
   }
 });
 
-// Transport SMTP
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
@@ -41,31 +48,25 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Génère un tableau HTML stylé
 function generateHtml(data) {
-  const rows = Object.entries(data).map(([label, value]) => `
+  const rows = Object.entries(FORM_FIELDS).map(([key, label]) => `
     <tr>
-      <td style="padding: 8px; border: 1px solid #ddd; background: #f8f8f8; font-weight: bold;">
-        ${label.replace(/([A-Z])/g, ' $1').replace(/\b\w/g, l => l.toUpperCase())}
-      </td>
-      <td style="padding: 8px; border: 1px solid #ddd;">
-        ${value || '<em>(vide)</em>'}
-      </td>
+      <td style="padding:8px; border:1px solid #ccc; background:#f8f8f8; font-weight:bold;">${label}</td>
+      <td style="padding:8px; border:1px solid #ccc;">${data[key] || '<em>(non renseigné)</em>'}</td>
     </tr>
   `).join("");
 
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 700px; margin: auto;">
-      <h2 style="text-align:center; color: #007bff;">📩 Nouveau formulaire reçu</h2>
-      <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+    <div style="font-family:Arial; max-width:700px; margin:auto;">
+      <h2 style="text-align:center; color:#007bff;">📦 Formulaire Pièce reçu</h2>
+      <table style="width:100%; border-collapse:collapse; margin-top:20px;">
         ${rows}
       </table>
-      <p style="margin-top: 20px;">📎 Des fichiers sont joints à ce message si fournis dans le formulaire.</p>
+      <p style="margin-top:20px;">📎 Des fichiers sont joints à ce message si fournis.</p>
     </div>
   `;
 }
 
-// Route de réception du formulaire
 app.post("/submit-form", upload.array("fichiers[]"), async (req, res) => {
   const formData = req.body;
   const attachments = req.files.map(file => ({
@@ -84,13 +85,12 @@ app.post("/submit-form", upload.array("fichiers[]"), async (req, res) => {
   try {
     await transporter.sendMail(mailOptions);
 
-    // Supprimer les fichiers temporaires
     req.files.forEach(file => fs.unlink(file.path, () => {}));
 
     res.status(200).send("Formulaire envoyé !");
   } catch (error) {
-    console.error("Erreur d'envoi :", error);
-    res.status(500).send("Erreur serveur.");
+    console.error("Erreur :", err);
+    res.status(500).send("Erreur lors de l'envoi du mail.");
   }
 });
 
@@ -99,5 +99,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Serveur lancé sur le port ${PORT}`);
+  console.log(`🚀 Serveur lancé sur le port ${PORT}`);
 });
