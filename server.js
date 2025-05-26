@@ -1,3 +1,5 @@
+"use strict";
+require("dotenv").config();
 const express = require("express");
 const multer = require("multer");
 const nodemailer = require("nodemailer");
@@ -18,10 +20,11 @@ const FORM_FIELDS = {
 };
 
 app.use(cors({
-  origin: 'https://348b238c-180f-4111-994a-5cd53d6e50db.filesusr.com',
-  methods: ['POST', 'GET'],
-  allowedHeaders: ['Content-Type']
+  origin: (origin, cb) => cb(null, true),
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
 }));
+app.options("*", cors());
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
