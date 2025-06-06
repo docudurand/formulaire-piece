@@ -79,6 +79,7 @@ app.post("/submit-form", upload.array("fichiers[]"), async (req, res) => {
     from: `"Formulaire création VL" <${process.env.EMAIL_USER}>`,
     to: process.env.DEST_EMAIL,
     subject: "📨Demande de création référence VL",
+	replyTo: formData.email,
     html: generateHtml(formData),
     attachments
   };
